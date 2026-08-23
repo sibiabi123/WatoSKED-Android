@@ -46,22 +46,11 @@ public class SettingsFragment extends Fragment {
         // Load saved PIN
         etPin.setText(prefs.getString("screen_pin", ""));
 
-        // Foreground service switch
+        // Persistent background preference
         switchFgService.setChecked(prefs.getBoolean("fg_service_enabled", true));
         switchFgService.setOnCheckedChangeListener((btn, checked) -> {
             prefs.edit().putBoolean("fg_service_enabled", checked).apply();
-            Intent intent = new Intent(requireContext(), WatoForegroundService.class);
-            if (checked) {
-                intent.setAction(WatoForegroundService.ACTION_START);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    requireContext().startForegroundService(intent);
-                } else {
-                    requireContext().startService(intent);
-                }
-            } else {
-                intent.setAction(WatoForegroundService.ACTION_STOP);
-                requireContext().startService(intent);
-            }
+            Toast.makeText(requireContext(), checked ? "Background service preference enabled" : "Disabled", Toast.LENGTH_SHORT).show();
         });
 
         // Save PIN

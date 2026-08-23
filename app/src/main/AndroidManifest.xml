@@ -7,8 +7,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <queries>
         <package android:name="com.whatsapp" />
@@ -46,12 +44,6 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-
-        <!-- Persistent Foreground Service -->
-        <service
-            android:name=".service.WatoForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
 
         <!-- Alarm Receiver -->
         <receiver

@@ -129,20 +129,11 @@ public class HomeFragment extends Fragment {
     }
 
     private void pickContact() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CONTACTS_PERM);
-        } else {
+        try {
             Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
             startActivityForResult(intent, REQUEST_CONTACT);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int code, @NonNull String[] perms, @NonNull int[] results) {
-        if (code == REQUEST_CONTACTS_PERM && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-            pickContact();
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Could not open contacts", Toast.LENGTH_SHORT).show();
         }
     }
 
