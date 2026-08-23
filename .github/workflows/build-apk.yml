@@ -25,22 +25,24 @@ jobs:
       - name: 🤖 Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: 🔑 Grant Execute Permissions for Gradlew
-        run: chmod +x gradlew || gradle wrapper
+      - name: 🏗️ Build Debug APK
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
+          arguments: assembleDebug --stacktrace
 
-      - name: 🏗️ Build Debug & Release APK
+      - name: 📦 Copy APK to Output
         run: |
-          gradle assembleDebug --stacktrace
           mkdir -p build_output
-          cp app/build/outputs/apk/debug/*.apk build_output/WatoSKED-v1.0.0-debug.apk
+          cp app/build/outputs/apk/debug/*.apk build_output/WatoSKED-v1.0.0.apk
 
-      - name: 📦 Upload APK Artifact
+      - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: WatoSKED-v1.0.0-APK
-          path: build_output/WatoSKED-v1.0.0-debug.apk
+          path: build_output/WatoSKED-v1.0.0.apk
 
-      - name: 🚀 Create GitHub Release with APK
+      - name: 🚀 Publish GitHub Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/heads/main')
         with:
@@ -58,10 +60,10 @@ jobs:
             - 🔄 **Auto-Restore on Reboot**: Automatically reschedules pending messages after phone restart.
 
             ### 📲 How to Install:
-            1. Download `WatoSKED-v1.0.0-debug.apk` below directly to your Android device.
+            1. Download `WatoSKED-v1.0.0.apk` below directly to your Android device.
             2. Open the file and tap **Install** (allow *Install Unknown Apps* if prompted).
             3. Open **WatoSKED** and enable **Accessibility Service** in Settings.
             4. Schedule your message and let your phone send it automatically!
-          files: build_output/WatoSKED-v1.0.0-debug.apk
+          files: build_output/WatoSKED-v1.0.0.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
