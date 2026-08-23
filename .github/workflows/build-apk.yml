@@ -1,4 +1,4 @@
-﻿name: "\U0001F4F1 Build Android APK (WatoSKED)"
+﻿name: "📱 Build Android APK (WatoSKED)"
 
 on:
   push:
@@ -6,79 +6,80 @@ on:
 
 jobs:
   build:
-    name: "\U0001F528 Compile & Dual-Sign Android APK"
+    name: "🔨 Compile & Dual-Sign Android APK"
     runs-on: ubuntu-latest
     steps:
-      - name: "\U0001F4E5 Checkout Repository"
+      - name: "📥 Checkout Repository"
         uses: actions/checkout@v4
 
-      - name: "\u2615 Set up JDK 17"
+      - name: "☕ Set up JDK 17"
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: "\U0001F916 Set up Android SDK"
+      - name: "🤖 Set up Android SDK"
         uses: android-actions/setup-android@v3
 
-      - name: "\U0001F527 Set up Gradle"
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: "\U0001F510 Generate Release Keystore"
+      - name: "🔐 Generate Release Keystore"
         run: |
           keytool -genkey -v \
             -keystore app/keystore.jks \
             -alias watosked \
-            -keyalg RSA -keysize 2048 \
+            -keyalg RSA \
+            -keysize 2048 \
             -validity 10000 \
             -storepass watosked123 \
             -keypass watosked123 \
             -dname "CN=WatoSKED, OU=Mobile, O=sibiabi123, L=Chennai, ST=TN, C=IN"
 
-      - name: "\U0001F3D7 Build Dual-Signed Release APK"
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+      - name: "🏗️ Build Dual-Signed Release APK"
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
+          arguments: assembleRelease --stacktrace
 
-      - name: "\U0001F4E6 Copy APK to Output"
+      - name: "📦 Copy APK to Output"
         run: |
           mkdir -p build_output
           cp app/build/outputs/apk/release/*.apk build_output/WatoSKED-v2.0.0.apk
 
-      - name: "\U0001F4E4 Upload APK Artifact"
+      - name: "📤 Upload APK Artifact"
         uses: actions/upload-artifact@v4
         with:
           name: WatoSKED-v2.0.0-APK
           path: build_output/WatoSKED-v2.0.0.apk
 
-      - name: "\U0001F680 Publish GitHub Release v2.0.0"
+      - name: "🚀 Publish GitHub Release v2.0.0"
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/heads/main')
         with:
           tag_name: v2.0.0
-          name: "WatoSKED v2.0.0 \u2014 Complete SKEDit Alternative"
+          name: "WatoSKED v2.0.0 — Complete SKEDit Alternative"
           body: |
-            ## \U0001F4F1 WatoSKED v2.0.0 \u2014 Full-Featured WhatsApp Auto-Scheduler
+            ## 📱 WatoSKED v2.0.0 — Full-Featured WhatsApp Auto-Scheduler
 
-            Complete production rebuild. Works directly on your own WhatsApp \u2014 no WhatsApp Web, no QR code.
+            Complete production rebuild. Works directly on your own WhatsApp — no WhatsApp Web, no QR code.
 
-            ### \U0001F195 What's New in v2.0:
-            - \U0001F501 **Repeat Messages** \u2014 Daily / Weekly / Custom Weekdays (Mon-Sun picker)
-            - \U0001F465 **Contact Picker** \u2014 Select from phone contacts directly
-            - \U0001F4DD **Message Templates** \u2014 Save & reuse your favourite messages
-            - \U0001F4BC **WhatsApp Business Support** \u2014 Toggle between Personal & Business accounts
-            - \u270F **Edit / Cancel Schedules** \u2014 Full management of pending messages
-            - \U0001F4DC **Send History** tab \u2014 SENT / FAILED log with timestamps
-            - \U0001F5C2 **Bottom Navigation** \u2014 Schedule / Pending / History / Settings
-            - \U0001F514 **Send Confirmation Notification**
-            - \u26A1 **Persistent Background Service** \u2014 Survives battery optimization
-            - \U0001F504 **3 Auto-Retry Logic** \u2014 Retries if WhatsApp not fully loaded
-            - \U0001F512 **Lockscreen Auto-Unlock** \u2014 PIN bypass like SKEDit
-            - \U0001F310 **Android 5.0 to 15** support (minSdk 21)
+            ### 🆕 What's New in v2.0:
+            - 🔁 **Repeat Messages** — Daily / Weekly / Custom Weekdays (Mon-Sun picker)
+            - 👥 **Contact Picker** — Select from phone contacts directly
+            - 📝 **Message Templates** — Save & reuse your favourite messages
+            - 💼 **WhatsApp Business Support** — Toggle between Personal & Business accounts
+            - ✏️ **Edit / Cancel Schedules** — Full management of pending messages
+            - 📜 **Send History** tab — SENT / FAILED log with timestamps
+            - 🗂️ **Bottom Navigation** — Schedule / Pending / History / Settings
+            - 🔔 **Send Confirmation Notification**
+            - ⚡ **Persistent Background Service** — Survives battery optimization
+            - 🔄 **3 Auto-Retry Logic** — Retries if WhatsApp not fully loaded
+            - 🔒 **Lockscreen Auto-Unlock** — PIN bypass like SKEDit
+            - 🌐 **Android 5.0 to 15** support (minSdk 21)
 
-            ### \U0001F4F2 How to Install:
+            ### 📲 How to Install:
             1. Download **WatoSKED-v2.0.0.apk** below
-            2. Open Downloads \u2192 Tap the APK \u2192 Install
-            3. If Play Protect shows warning: tap **OK** \u2192 go to Settings \u2192 Apps \u2192 WatoSKED \u2192 3 dots \u2192 **Allow Restricted Settings**
-            4. Open WatoSKED \u2192 **Settings tab** \u2192 Enable Accessibility Service
+            2. Open Downloads → Tap the APK → Install
+            3. If Play Protect shows warning: tap **OK** → go to Settings → Apps → WatoSKED → 3 dots → **Allow Restricted Settings**
+            4. Open WatoSKED → **Settings tab** → Enable Accessibility Service
             5. Schedule your first message and watch it send automatically!
           files: build_output/WatoSKED-v2.0.0.apk
         env:
