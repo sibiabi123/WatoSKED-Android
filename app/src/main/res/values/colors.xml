@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#075E54</color>
+    <color name="primary_dark">#004D40</color>
+    <color name="accent">#25D366</color>
+    <color name="background">#0B141B</color>
+    <color name="surface">#111B21</color>
+    <color name="card_bg">#1F2C34</color>
+    <color name="text_primary">#E9EDEF</color>
+    <color name="text_secondary">#8696A0</color>
+    <color name="status_pending">#FFB300</color>
+    <color name="status_sent">#25D366</color>
+    <color name="status_failed">#E53935</color>
+</resources>
