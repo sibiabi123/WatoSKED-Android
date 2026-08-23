@@ -1,32 +1,24 @@
-package com.sibiabi.watosked;
+﻿package com.sibiabi.watosked;
 
-import android.app.Application;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import android.content.Intent;
 import android.os.Build;
 
-public class WatoSkedApp extends Application {
+import androidx.multidex.MultiDexApplication;
 
-    public static final String CHANNEL_ID = "watosked_scheduler_channel";
+import com.sibiabi.watosked.service.WatoForegroundService;
+
+public class WatoSkedApp extends MultiDexApplication {
 
     @Override
     public void onCreate() {
         super.onCreate();
-        createNotificationChannel();
-    }
-
-    private void createNotificationChannel() {
+        // Start foreground service to keep app alive
+        Intent serviceIntent = new Intent(this, WatoForegroundService.class);
+        serviceIntent.setAction(WatoForegroundService.ACTION_START);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "WhatsApp Scheduled Messages",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            channel.setDescription("Notifications for automated WhatsApp scheduled messages");
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
-            }
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
         }
     }
 }

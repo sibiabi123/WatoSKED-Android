@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.sibiabi.watosked">
 
@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <queries>
         <package android:name="com.whatsapp" />
@@ -32,7 +34,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Accessibility Service to automate WhatsApp sending -->
+        <!-- Accessibility Service -->
         <service
             android:name=".service.WhatsAppAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -45,12 +47,18 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <!-- Receiver for Scheduled Alarms -->
+        <!-- Persistent Foreground Service -->
+        <service
+            android:name=".service.WatoForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Alarm Receiver -->
         <receiver
             android:name=".receiver.AlarmReceiver"
             android:exported="false" />
 
-        <!-- Receiver for Device Boot to restore scheduled alarms -->
+        <!-- Boot Receiver -->
         <receiver
             android:name=".receiver.BootReceiver"
             android:exported="true">

@@ -1,4 +1,4 @@
-package com.sibiabi.watosked.receiver;
+﻿package com.sibiabi.watosked.receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,21 +17,28 @@ public class BootReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction()) || "android.intent.action.QUICKBOOT_POWERON".equals(intent.getAction())) {
-            Log.i(TAG, "Device rebooted. Restoring all pending scheduled WhatsApp messages...");
+        String action = intent.getAction();
+        if (!Intent.ACTION_BOOT_COMPLETED.equals(action) &&
+            !"android.intent.action.QUICKBOOT_POWERON".equals(action)) return;
 
-            DatabaseHelper db = new DatabaseHelper(context);
-            List<ScheduledMessage> pending = db.getPendingSchedules();
-            long now = System.currentTimeMillis();
+        Log.i(TAG, "Device booted — restoring pending alarms...");
 
-            for (ScheduledMessage msg : pending) {
-                if (msg.getTimestamp() > now) {
-                    AlarmSchedulerHelper.scheduleAlarm(context, msg);
-                    Log.d(TAG, "Restored schedule ID: " + msg.getId() + " at " + msg.getTimestamp());
-                } else {
-                    db.updateStatus(msg.getId(), "MISSED");
-                }
+        DatabaseHelper db = new DatabaseHelper(context);
+        List<ScheduledMessage> pending = db.getPendingSchedules();
+
+        int count = 0;
+        long now = System.currentTimeMillis();
+        for (ScheduledMessage msg : pending) {
+            if (msg.getTimestamp() > now) {
+                AlarmSchedulerHelper.scheduleAlarm(context, msg);
+                count++;
+            } else {
+                // Overdue — mark as failed (was not sent while device was off)
+                db.updateStatus(msg.getId(), ScheduledMessage.STATUS_FAILED);
+                Log.w(TAG, "Overdue message id=" + msg.getId() + " marked FAILED");
             }
         }
+
+        Log.i(TAG, "Restored " + count + " pending alarm(s)");
     }
 }

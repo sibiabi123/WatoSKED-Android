@@ -1,15 +1,15 @@
-package com.sibiabi.watosked.adapter;
+﻿package com.sibiabi.watosked.adapter;
 
-import android.content.Context;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.chip.Chip;
 import com.sibiabi.watosked.R;
 import com.sibiabi.watosked.model.ScheduledMessage;
 
@@ -18,58 +18,69 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHolder> {
+public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
 
-    private final Context context;
-    private final List<ScheduledMessage> schedules;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.getDefault());
-
-    public ScheduleAdapter(Context context, List<ScheduledMessage> schedules) {
-        this.context = context;
-        this.schedules = schedules;
+    public interface OnDeleteClick {
+        void onDelete(ScheduledMessage msg);
     }
 
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_schedule, parent, false);
-        return new ViewHolder(view);
+    private final List<ScheduledMessage> list;
+    private final OnDeleteClick          listener;
+    private final SimpleDateFormat fmt = new SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault());
+
+    public ScheduleAdapter(List<ScheduledMessage> list, OnDeleteClick listener) {
+        this.list     = list;
+        this.listener = listener;
+    }
+
+    @NonNull @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_schedule, parent, false);
+        return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        ScheduledMessage item = schedules.get(position);
-        holder.tvRecipient.setText(item.getRecipient());
-        holder.tvMessage.setText(item.getMessage());
-        holder.tvTime.setText("⏰ Scheduled: " + dateFormat.format(new Date(item.getTimestamp())));
-        holder.tvStatus.setText(item.getStatus());
+    public void onBindViewHolder(@NonNull VH h, int pos) {
+        ScheduledMessage s = list.get(pos);
 
-        if ("SENT".equalsIgnoreCase(item.getStatus())) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_sent);
-            holder.tvStatus.setTextColor(Color.parseColor("#000000"));
-        } else if ("FAILED".equalsIgnoreCase(item.getStatus()) || "MISSED".equalsIgnoreCase(item.getStatus())) {
-            holder.tvStatus.setBackgroundColor(Color.parseColor("#E53935"));
-            holder.tvStatus.setTextColor(Color.WHITE);
+        h.tvName.setText(s.getDisplayName());
+        h.tvPhone.setText(s.getRecipient());
+
+        String preview = s.getMessage();
+        h.tvMessage.setText(preview.length() > 70 ? preview.substring(0, 70) + "..." : preview);
+        h.tvTime.setText(fmt.format(new Date(s.getTimestamp())));
+
+        // Repeat chip
+        if (!ScheduledMessage.REPEAT_NONE.equals(s.getRepeatType())) {
+            h.chipRepeat.setVisibility(View.VISIBLE);
+            h.chipRepeat.setText(s.getRepeatType());
         } else {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
-            holder.tvStatus.setTextColor(Color.parseColor("#000000"));
+            h.chipRepeat.setVisibility(View.GONE);
         }
+
+        // WA type chip
+        h.chipWaType.setText(s.isWhatsAppBusiness() ? "Business" : "WhatsApp");
+
+        h.btnDelete.setOnClickListener(v -> listener.onDelete(s));
     }
 
-    @Override
-    public int getItemCount() {
-        return schedules.size();
-    }
+    @Override public int getItemCount() { return list.size(); }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvRecipient, tvMessage, tvTime, tvStatus;
+    static class VH extends RecyclerView.ViewHolder {
+        TextView    tvName, tvPhone, tvMessage, tvTime;
+        Chip        chipRepeat, chipWaType;
+        ImageButton btnDelete;
 
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            tvRecipient = itemView.findViewById(R.id.tvRecipient);
-            tvMessage = itemView.findViewById(R.id.tvMessage);
-            tvTime = itemView.findViewById(R.id.tvTime);
-            tvStatus = itemView.findViewById(R.id.tvStatus);
+        VH(View v) {
+            super(v);
+            tvName     = v.findViewById(R.id.tvName);
+            tvPhone    = v.findViewById(R.id.tvPhone);
+            tvMessage  = v.findViewById(R.id.tvMessage);
+            tvTime     = v.findViewById(R.id.tvTime);
+            chipRepeat = v.findViewById(R.id.chipRepeat);
+            chipWaType = v.findViewById(R.id.chipWaType);
+            btnDelete  = v.findViewById(R.id.btnDelete);
         }
     }
 }

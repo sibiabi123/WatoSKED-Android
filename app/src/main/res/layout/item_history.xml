@@ -16,10 +16,8 @@
         android:orientation="vertical"
         android:padding="14dp">
 
-        <!-- Row 1: Name + Delete -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:gravity="center_vertical">
-
             <TextView android:id="@+id/tvName"
                 android:layout_width="0dp" android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -28,23 +26,18 @@
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"/>
-
-            <ImageButton android:id="@+id/btnDelete"
-                android:layout_width="36dp" android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_delete"
-                android:tint="#FF5252"
-                android:contentDescription="Cancel schedule"/>
+            <TextView android:id="@+id/tvStatus"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textStyle="bold"/>
         </LinearLayout>
 
-        <!-- Row 2: Phone -->
         <TextView android:id="@+id/tvPhone"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
             android:layout_marginTop="2dp"/>
 
-        <!-- Row 3: Message preview -->
         <TextView android:id="@+id/tvMessage"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:textColor="@color/text_primary"
@@ -53,32 +46,10 @@
             android:maxLines="2"
             android:ellipsize="end"/>
 
-        <!-- Row 4: Time + Chips -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:gravity="center_vertical"
-            android:layout_marginTop="8dp">
-
-            <TextView android:id="@+id/tvTime"
-                android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/accent"
-                android:textSize="12sp"
-                android:textStyle="bold"/>
-
-            <com.google.android.material.chip.Chip android:id="@+id/chipRepeat"
-                android:layout_width="wrap_content" android:layout_height="26dp"
-                android:layout_marginStart="6dp"
-                android:textSize="10sp"
-                app:chipBackgroundColor="#1E40AF"
-                android:textColor="#FFFFFF"
-                android:visibility="gone"/>
-
-            <com.google.android.material.chip.Chip android:id="@+id/chipWaType"
-                android:layout_width="wrap_content" android:layout_height="26dp"
-                android:layout_marginStart="4dp"
-                android:textSize="10sp"
-                android:textColor="#FFFFFF"/>
-        </LinearLayout>
-
+        <TextView android:id="@+id/tvTime"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

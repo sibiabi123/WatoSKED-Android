@@ -1,4 +1,4 @@
-package com.sibiabi.watosked.service;
+﻿package com.sibiabi.watosked.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Path;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,234 +16,267 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.sibiabi.watosked.db.DatabaseHelper;
+import com.sibiabi.watosked.model.ScheduledMessage;
 
-import java.net.URLEncoder;
 import java.util.List;
 
 public class WhatsAppAccessibilityService extends AccessibilityService {
 
-    private static final String TAG = "WatoAccessibility";
-    public static boolean isScheduledSendActive = false;
-    public static long currentScheduleId = -1;
-    public static String pendingRecipient = null;
-    public static String pendingMessage = null;
+    private static final String TAG         = "WatoAccessibility";
+    private static final int    MAX_RETRIES = 3;
+    private static final long   RETRY_DELAY = 1500L;
+
+    // ---- Static flags (set by AlarmReceiver) ----
+    public static volatile boolean isScheduledSendActive = false;
+    public static volatile long    currentScheduleId     = -1;
+    public static volatile String  pendingRecipient      = null;
+    public static volatile String  pendingMessage        = null;
+    public static volatile String  pendingWaPackage      = "com.whatsapp";
 
     private boolean isUnlockingInProgress = false;
-
-    @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (!isScheduledSendActive) {
-            return;
-        }
-
-        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        if (rootNode == null) {
-            return;
-        }
-
-        CharSequence packageName = event.getPackageName();
-        if (packageName == null) return;
-        String pkg = packageName.toString();
-
-        Log.d(TAG, "Accessibility Event from package: " + pkg);
-
-        // 1. Check if device is on Lockscreen (SystemUI / Keyguard)
-        if (pkg.contains("systemui") || pkg.contains("keyguard") || pkg.contains("lockscreen")) {
-            handleLockScreenUnlock(rootNode);
-            return;
-        }
-
-        // 2. Check if we are inside WhatsApp or WhatsApp Business
-        if (pkg.equals("com.whatsapp") || pkg.equals("com.whatsapp.w4b")) {
-            isUnlockingInProgress = false;
-
-            // Small delay to ensure chat window elements are completely loaded
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                boolean clicked = findAndClickSendButton(rootNode);
-                if (clicked) {
-                    Log.d(TAG, "✅ WhatsApp Send button clicked successfully!");
-                    isScheduledSendActive = false;
-                    pendingRecipient = null;
-                    pendingMessage = null;
-
-                    // Update database status to SENT
-                    if (currentScheduleId != -1) {
-                        DatabaseHelper db = new DatabaseHelper(getApplicationContext());
-                        db.updateStatus(currentScheduleId, "SENT");
-                        currentScheduleId = -1;
-                    }
-                }
-            }, 450);
-        }
-    }
-
-    private void handleLockScreenUnlock(AccessibilityNodeInfo rootNode) {
-        if (isUnlockingInProgress) return;
-        isUnlockingInProgress = true;
-
-        Log.d(TAG, "Device is locked. Attempting lockscreen bypass...");
-
-        SharedPreferences prefs = getSharedPreferences("watosked_prefs", Context.MODE_PRIVATE);
-        String savedPin = prefs.getString("screen_pin", "");
-
-        // Step 1: Swipe up to reveal PIN pad if swipe screen is present
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Path swipePath = new Path();
-            swipePath.moveTo(500, 1500);
-            swipePath.lineTo(500, 300);
-            GestureDescription.Builder builder = new GestureDescription.Builder();
-            builder.addStroke(new GestureDescription.StrokeDescription(swipePath, 50, 250));
-            dispatchGesture(builder.build(), new GestureResultCallback() {
-                @Override
-                public void onCompleted(GestureDescription gestureDescription) {
-                    super.onCompleted(gestureDescription);
-                    Log.d(TAG, "Swipe-up gesture completed.");
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> enterPinIfAvailable(rootNode, savedPin), 300);
-                }
-            }, null);
-        } else {
-            enterPinIfAvailable(rootNode, savedPin);
-        }
-    }
-
-    private void enterPinIfAvailable(AccessibilityNodeInfo rootNode, String pin) {
-        if (TextUtils.isEmpty(pin)) {
-            Log.d(TAG, "No PIN configured. Launching WhatsApp directly after keyguard dismiss.");
-            launchWhatsAppDirectly();
-            return;
-        }
-
-        Log.d(TAG, "Auto-entering user configured screen PIN...");
-
-        // Try entering PIN by pressing digit buttons (e.g. key0, key1... or text 0, 1, 2)
-        for (char digit : pin.toCharArray()) {
-            String digitStr = String.valueOf(digit);
-            boolean pressed = clickDigitNode(rootNode, digitStr);
-            if (!pressed) {
-                // Try setting text into password field
-                List<AccessibilityNodeInfo> editTexts = rootNode.findAccessibilityNodeInfosByViewId("com.android.systemui:id/password_entry");
-                if (editTexts != null && !editTexts.isEmpty()) {
-                    Bundle arguments = new Bundle();
-                    arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, pin);
-                    editTexts.get(0).performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);
-                    break;
-                }
-            }
-        }
-
-        // Try clicking Enter/OK button on lockscreen
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            clickKeyguardEnter(rootNode);
-            launchWhatsAppDirectly();
-        }, 500);
-    }
-
-    private boolean clickDigitNode(AccessibilityNodeInfo root, String digit) {
-        if (root == null) return false;
-
-        // Find by text
-        List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(digit);
-        if (nodes != null && !nodes.isEmpty()) {
-            for (AccessibilityNodeInfo node : nodes) {
-                if (node.isClickable()) {
-                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    return true;
-                }
-            }
-        }
-
-        // Find by common view ID in SystemUI (key0, key1, etc.)
-        List<AccessibilityNodeInfo> idNodes = root.findAccessibilityNodeInfosByViewId("com.android.systemui:id/key" + digit);
-        if (idNodes != null && !idNodes.isEmpty()) {
-            idNodes.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
-            return true;
-        }
-
-        return false;
-    }
-
-    private void clickKeyguardEnter(AccessibilityNodeInfo root) {
-        if (root == null) return;
-        List<AccessibilityNodeInfo> enterNodes = root.findAccessibilityNodeInfosByViewId("com.android.systemui:id/key_enter");
-        if (enterNodes != null && !enterNodes.isEmpty()) {
-            enterNodes.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        }
-    }
-
-    private void launchWhatsAppDirectly() {
-        if (pendingRecipient == null || pendingMessage == null) return;
-
-        try {
-            String cleanPhone = pendingRecipient.replaceAll("[^0-9]", "");
-            String url = "https://api.whatsapp.com/send?phone=" + cleanPhone + "&text=" + URLEncoder.encode(pendingMessage, "UTF-8");
-            Intent whatsappIntent = new Intent(Intent.ACTION_VIEW);
-            whatsappIntent.setData(Uri.parse(url));
-            whatsappIntent.setPackage("com.whatsapp");
-            whatsappIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(whatsappIntent);
-            Log.d(TAG, "WhatsApp Intent re-launched after lockscreen bypass.");
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to launch WhatsApp after unlock", e);
-        }
-    }
-
-    private boolean findAndClickSendButton(AccessibilityNodeInfo node) {
-        if (node == null) return false;
-
-        // Method 1: Find by view ID
-        List<AccessibilityNodeInfo> sendNodes = node.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send");
-        if (sendNodes != null && !sendNodes.isEmpty()) {
-            for (AccessibilityNodeInfo btn : sendNodes) {
-                if (btn.isClickable() && btn.isEnabled()) {
-                    btn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    return true;
-                }
-            }
-        }
-
-        // Method 2: Find by Content Description ("Send")
-        List<AccessibilityNodeInfo> descNodes = node.findAccessibilityNodeInfosByText("Send");
-        if (descNodes != null && !descNodes.isEmpty()) {
-            for (AccessibilityNodeInfo btn : descNodes) {
-                if (btn.isClickable() && btn.isEnabled()) {
-                    btn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    return true;
-                }
-            }
-        }
-
-        // Method 3: Recursive traversal for Send button
-        return recursiveFindSend(node);
-    }
-
-    private boolean recursiveFindSend(AccessibilityNodeInfo node) {
-        if (node == null) return false;
-
-        CharSequence desc = node.getContentDescription();
-        if (desc != null && desc.toString().equalsIgnoreCase("Send")) {
-            if (node.isClickable()) {
-                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                return true;
-            }
-        }
-
-        for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo child = node.getChild(i);
-            if (recursiveFindSend(child)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public void onInterrupt() {
-        Log.e(TAG, "Accessibility Service Interrupted");
-    }
+    private int     sendRetryCount        = 0;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        Log.i(TAG, "WhatsApp Accessibility Service Connected & Ready!");
+        Log.i(TAG, "WatoSKED Accessibility Service connected and ready");
+    }
+
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (!isScheduledSendActive) return;
+
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) return;
+
+        CharSequence pkgCS = event.getPackageName();
+        if (pkgCS == null) return;
+        String pkg = pkgCS.toString();
+
+        // --- Lockscreen detected ---
+        if (pkg.contains("systemui") || pkg.contains("keyguard") || pkg.contains("lockscreen")) {
+            handleLockScreenUnlock(root);
+            return;
+        }
+
+        // --- WhatsApp or WhatsApp Business opened ---
+        if ("com.whatsapp".equals(pkg) || "com.whatsapp.w4b".equals(pkg)) {
+            isUnlockingInProgress = false;
+            // Delayed attempt to click send (let chat fully load)
+            handler.postDelayed(() -> attemptSend(getRootInActiveWindow()), 600);
+        }
+    }
+
+    // ---- Send with retry ----
+    private void attemptSend(AccessibilityNodeInfo root) {
+        if (!isScheduledSendActive || root == null) return;
+
+        boolean clicked = findAndClickSendButton(root);
+        if (clicked) {
+            Log.i(TAG, "Send button clicked! Attempt #" + (sendRetryCount + 1));
+            onMessageSent();
+        } else {
+            sendRetryCount++;
+            if (sendRetryCount < MAX_RETRIES) {
+                Log.w(TAG, "Send not yet available, retry #" + sendRetryCount + " in " + RETRY_DELAY + "ms");
+                handler.postDelayed(() -> attemptSend(getRootInActiveWindow()), RETRY_DELAY);
+            } else {
+                Log.e(TAG, "Send failed after " + MAX_RETRIES + " attempts");
+                onMessageFailed();
+            }
+        }
+    }
+
+    private void onMessageSent() {
+        isScheduledSendActive = false;
+        sendRetryCount        = 0;
+        if (currentScheduleId != -1) {
+            DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+            db.updateStatus(currentScheduleId, ScheduledMessage.STATUS_SENT);
+            currentScheduleId = -1;
+        }
+        pendingRecipient = null;
+        pendingMessage   = null;
+    }
+
+    private void onMessageFailed() {
+        isScheduledSendActive = false;
+        sendRetryCount        = 0;
+        if (currentScheduleId != -1) {
+            DatabaseHelper db = new DatabaseHelper(getApplicationContext());
+            db.updateStatus(currentScheduleId, ScheduledMessage.STATUS_FAILED);
+            currentScheduleId = -1;
+        }
+        pendingRecipient = null;
+        pendingMessage   = null;
+    }
+
+    // ---- Lockscreen bypass ----
+    private void handleLockScreenUnlock(AccessibilityNodeInfo root) {
+        if (isUnlockingInProgress) return;
+        isUnlockingInProgress = true;
+        Log.d(TAG, "Lockscreen detected — attempting bypass...");
+
+        SharedPreferences prefs = getSharedPreferences("watosked_prefs", Context.MODE_PRIVATE);
+        String pin = prefs.getString("screen_pin", "");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // Swipe up to reveal PIN pad
+            Path path = new Path();
+            path.moveTo(540, 1600);
+            path.lineTo(540, 400);
+            GestureDescription gesture = new GestureDescription.Builder()
+                    .addStroke(new GestureDescription.StrokeDescription(path, 0, 300))
+                    .build();
+            dispatchGesture(gesture, new GestureResultCallback() {
+                @Override public void onCompleted(GestureDescription g) {
+                    handler.postDelayed(() -> enterPin(getRootInActiveWindow(), pin), 400);
+                }
+            }, null);
+        } else {
+            enterPin(root, pin);
+        }
+    }
+
+    private void enterPin(AccessibilityNodeInfo root, String pin) {
+        if (root == null) { isUnlockingInProgress = false; return; }
+
+        if (TextUtils.isEmpty(pin)) {
+            // No PIN — just try to launch WhatsApp after swipe
+            handler.postDelayed(this::launchWhatsApp, 500);
+            isUnlockingInProgress = false;
+            return;
+        }
+
+        // Try direct text set into password field first
+        List<AccessibilityNodeInfo> passFields = root.findAccessibilityNodeInfosByViewId(
+                "com.android.systemui:id/password_entry");
+        if (passFields != null && !passFields.isEmpty()) {
+            Bundle args = new Bundle();
+            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, pin);
+            passFields.get(0).performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args);
+            // Press enter after 300ms
+            handler.postDelayed(() -> {
+                AccessibilityNodeInfo r2 = getRootInActiveWindow();
+                if (r2 != null) clickKeyguardEnter(r2);
+                handler.postDelayed(this::launchWhatsApp, 600);
+            }, 300);
+        } else {
+            // Tap individual digit buttons
+            for (char digit : pin.toCharArray()) {
+                clickDigit(root, String.valueOf(digit));
+            }
+            handler.postDelayed(() -> {
+                AccessibilityNodeInfo r2 = getRootInActiveWindow();
+                if (r2 != null) clickKeyguardEnter(r2);
+                handler.postDelayed(this::launchWhatsApp, 600);
+            }, 500);
+        }
+        isUnlockingInProgress = false;
+    }
+
+    private void clickDigit(AccessibilityNodeInfo root, String digit) {
+        // Try by text
+        List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(digit);
+        if (nodes != null) {
+            for (AccessibilityNodeInfo n : nodes) {
+                if (n.isClickable()) { n.performAction(AccessibilityNodeInfo.ACTION_CLICK); return; }
+            }
+        }
+        // Try by ViewId (AOSP pattern)
+        List<AccessibilityNodeInfo> idNodes = root.findAccessibilityNodeInfosByViewId(
+                "com.android.systemui:id/key" + digit);
+        if (idNodes != null && !idNodes.isEmpty()) {
+            idNodes.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        }
+    }
+
+    private void clickKeyguardEnter(AccessibilityNodeInfo root) {
+        List<AccessibilityNodeInfo> enter = root.findAccessibilityNodeInfosByViewId(
+                "com.android.systemui:id/key_enter");
+        if (enter != null && !enter.isEmpty()) {
+            enter.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        }
+    }
+
+    private void launchWhatsApp() {
+        if (pendingRecipient == null || pendingMessage == null) return;
+        try {
+            String phone = pendingRecipient.replaceAll("[^0-9+]", "");
+            String url   = "https://api.whatsapp.com/send?phone=" + phone
+                         + "&text=" + java.net.URLEncoder.encode(pendingMessage, "UTF-8");
+            String pkg   = pendingWaPackage != null ? pendingWaPackage : "com.whatsapp";
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setData(android.net.Uri.parse(url));
+            i.setPackage(pkg);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(i);
+            Log.d(TAG, "WhatsApp re-launched after lockscreen bypass");
+        } catch (Exception e) {
+            Log.e(TAG, "Error launching WhatsApp after unlock", e);
+        }
+    }
+
+    // ---- Find and click the WhatsApp Send button ----
+    private boolean findAndClickSendButton(AccessibilityNodeInfo root) {
+        if (root == null) return false;
+
+        // Method 1: By ViewId (most reliable)
+        String[] sendIds = {
+            "com.whatsapp:id/send",
+            "com.whatsapp.w4b:id/send",
+            "com.whatsapp:id/conversation_send_button",
+            "com.whatsapp.w4b:id/conversation_send_button"
+        };
+        for (String resId : sendIds) {
+            List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByViewId(resId);
+            if (nodes != null) {
+                for (AccessibilityNodeInfo n : nodes) {
+                    if (n.isClickable() && n.isEnabled()) {
+                        n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Method 2: By content description
+        String[] descs = {"Send", "Send message", "Send voice message"};
+        for (String desc : descs) {
+            List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(desc);
+            if (nodes != null) {
+                for (AccessibilityNodeInfo n : nodes) {
+                    if (n.isClickable() && n.isEnabled()) {
+                        CharSequence cd = n.getContentDescription();
+                        if (cd != null && cd.toString().toLowerCase().contains("send")) {
+                            n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Method 3: Recursive traversal
+        return recursiveFind(root);
+    }
+
+    private boolean recursiveFind(AccessibilityNodeInfo node) {
+        if (node == null) return false;
+        CharSequence desc = node.getContentDescription();
+        if (node.isClickable() && node.isEnabled() && desc != null &&
+            desc.toString().toLowerCase().contains("send")) {
+            node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            return true;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            if (recursiveFind(node.getChild(i))) return true;
+        }
+        return false;
+    }
+
+    @Override public void onInterrupt() {
+        Log.w(TAG, "Accessibility service interrupted");
     }
 }

@@ -1,4 +1,4 @@
-apply plugin: 'com.android.application'
+﻿apply plugin: 'com.android.application'
 
 android {
     namespace 'com.sibiabi.watosked'
@@ -8,8 +8,8 @@ android {
         applicationId "com.sibiabi.watosked"
         minSdk 21
         targetSdk 34
-        versionCode 4
-        versionName "1.2.1"
+        versionCode 5
+        versionName "2.0.0"
         multiDexEnabled true
     }
 
@@ -34,6 +34,7 @@ android {
             debuggable true
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -47,4 +48,6 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.fragment:fragment:1.6.2'
+    implementation 'androidx.core:core:1.12.0'
 }
