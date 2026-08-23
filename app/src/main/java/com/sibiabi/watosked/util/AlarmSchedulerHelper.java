@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.util;
+package com.sibiabi.watosked.util;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;

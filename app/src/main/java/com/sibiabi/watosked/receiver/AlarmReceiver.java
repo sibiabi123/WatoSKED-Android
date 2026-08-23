@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.receiver;
+package com.sibiabi.watosked.receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

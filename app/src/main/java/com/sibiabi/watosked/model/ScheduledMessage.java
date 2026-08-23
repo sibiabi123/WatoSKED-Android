@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.model;
+package com.sibiabi.watosked.model;
 
 public class ScheduledMessage {
     // Repeat types

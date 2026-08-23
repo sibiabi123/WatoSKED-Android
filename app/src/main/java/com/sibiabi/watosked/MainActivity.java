@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked;
+package com.sibiabi.watosked;
 
 import android.os.Bundle;
 

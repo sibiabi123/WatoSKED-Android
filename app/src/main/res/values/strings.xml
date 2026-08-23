@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WatoSKED</string>
     <string name="accessibility_service_description">WatoSKED requires Accessibility Service permission to automatically click the WhatsApp Send button on your behalf when a scheduled message fires. It does NOT read your messages. It only interacts with the WhatsApp Send button UI element.</string>

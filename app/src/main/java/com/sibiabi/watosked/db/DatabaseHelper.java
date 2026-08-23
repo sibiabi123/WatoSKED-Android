@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.db;
+package com.sibiabi.watosked.db;
 
 import android.content.ContentValues;
 import android.content.Context;

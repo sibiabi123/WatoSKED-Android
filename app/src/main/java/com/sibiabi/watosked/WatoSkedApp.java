@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked;
+package com.sibiabi.watosked;
 
 import android.content.Intent;
 import android.os.Build;

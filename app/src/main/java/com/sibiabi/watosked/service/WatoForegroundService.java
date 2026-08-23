@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.service;
+package com.sibiabi.watosked.service;
 
 import android.app.Notification;
 import android.app.NotificationChannel;

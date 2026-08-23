@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.service;
+package com.sibiabi.watosked.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;

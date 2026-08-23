@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.adapter;
+package com.sibiabi.watosked.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;

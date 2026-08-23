@@ -1,4 +1,4 @@
-﻿package com.sibiabi.watosked.ui;
+package com.sibiabi.watosked.ui;
 
 import android.content.Context;
 import android.content.Intent;
