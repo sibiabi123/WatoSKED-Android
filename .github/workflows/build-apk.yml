@@ -34,20 +34,20 @@ jobs:
       - name: 📦 Copy APK to Output
         run: |
           mkdir -p build_output
-          cp app/build/outputs/apk/debug/*.apk build_output/WatoSKED-v1.0.0.apk
+          cp app/build/outputs/apk/debug/*.apk build_output/WatoSKED-v1.1.0.apk
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WatoSKED-v1.0.0-APK
-          path: build_output/WatoSKED-v1.0.0.apk
+          name: WatoSKED-v1.1.0-APK
+          path: build_output/WatoSKED-v1.1.0.apk
 
       - name: 🚀 Publish GitHub Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.0.0
-          name: WatoSKED v1.0.0 — Native Android WhatsApp Auto-Scheduler APK
+          tag_name: v1.1.0
+          name: WatoSKED v1.1.0 — Native Android WhatsApp Auto-Scheduler APK (with Lockscreen Bypass)
           body: |
             ## 📱 WatoSKED v1.0.0 (Native Android APK)
 

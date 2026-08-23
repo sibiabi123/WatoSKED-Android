@@ -1,9 +1,11 @@
 package com.sibiabi.watosked.receiver;
 
+import android.app.KeyguardManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.PowerManager;
 import android.util.Log;
 
@@ -27,23 +29,27 @@ public class AlarmReceiver extends BroadcastReceiver {
             return;
         }
 
-        // Keep CPU awake
+        // 1. Wake up the screen from sleep (Screen on + CPU wake lock)
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wakeLock = null;
         if (pm != null) {
-            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "WatoSKED:WakeLock");
-            wakeLock.acquire(15000); // 15 seconds max
+            int flags = PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                flags |= PowerManager.SCREEN_BRIGHT_WAKE_LOCK;
+            }
+            wakeLock = pm.newWakeLock(flags, "WatoSKED:ScreenWakeLock");
+            wakeLock.acquire(20000); // 20 seconds
         }
 
         try {
-            // Clean phone number (remove +, spaces, dashes)
-            String cleanPhone = recipient.replaceAll("[^0-9]", "");
-
-            // Flag accessibility service to auto-click Send
+            // Store pending details for accessibility service
             WhatsAppAccessibilityService.isScheduledSendActive = true;
             WhatsAppAccessibilityService.currentScheduleId = scheduleId;
+            WhatsAppAccessibilityService.pendingRecipient = recipient;
+            WhatsAppAccessibilityService.pendingMessage = message;
 
-            // Build WhatsApp Intent
+            // 2. Launch WhatsApp Intent
+            String cleanPhone = recipient.replaceAll("[^0-9]", "");
             String url = "https://api.whatsapp.com/send?phone=" + cleanPhone + "&text=" + URLEncoder.encode(message, "UTF-8");
             Intent whatsappIntent = new Intent(Intent.ACTION_VIEW);
             whatsappIntent.setData(Uri.parse(url));
@@ -51,7 +57,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             whatsappIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
             context.startActivity(whatsappIntent);
-            Log.d(TAG, "WhatsApp Intent launched for automated send.");
+            Log.d(TAG, "WhatsApp Intent launched. If locked, AccessibilityService will bypass lockscreen.");
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to launch WhatsApp Intent", e);

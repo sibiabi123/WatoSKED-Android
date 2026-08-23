@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,15 +35,16 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText etRecipient, etMessage;
+    private EditText etRecipient, etMessage, etScreenPin;
     private TextView tvSelectedDateTime;
     private MaterialCardView cardPermissionWarning;
-    private Button btnEnableAccessibility, btnPickDateTime, btnSchedule;
+    private Button btnEnableAccessibility, btnPickDateTime, btnSchedule, btnSavePin;
     private RecyclerView rvSchedules;
 
     private DatabaseHelper dbHelper;
     private ScheduleAdapter adapter;
     private List<ScheduledMessage> scheduleList;
+    private SharedPreferences prefs;
 
     private Calendar selectedCalendar;
     private final SimpleDateFormat displayFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.getDefault());
@@ -53,9 +55,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         dbHelper = new DatabaseHelper(this);
+        prefs = getSharedPreferences("watosked_prefs", Context.MODE_PRIVATE);
         selectedCalendar = Calendar.getInstance();
 
         initViews();
+        loadSavedPin();
         setupRecyclerView();
         checkPermissions();
         setupListeners();
@@ -71,12 +75,21 @@ public class MainActivity extends AppCompatActivity {
     private void initViews() {
         cardPermissionWarning = findViewById(R.id.cardPermissionWarning);
         btnEnableAccessibility = findViewById(R.id.btnEnableAccessibility);
+        etScreenPin = findViewById(R.id.etScreenPin);
+        btnSavePin = findViewById(R.id.btnSavePin);
         etRecipient = findViewById(R.id.etRecipient);
         etMessage = findViewById(R.id.etMessage);
         btnPickDateTime = findViewById(R.id.btnPickDateTime);
         tvSelectedDateTime = findViewById(R.id.tvSelectedDateTime);
         btnSchedule = findViewById(R.id.btnSchedule);
         rvSchedules = findViewById(R.id.rvSchedules);
+    }
+
+    private void loadSavedPin() {
+        String savedPin = prefs.getString("screen_pin", "");
+        if (!TextUtils.isEmpty(savedPin)) {
+            etScreenPin.setText(savedPin);
+        }
     }
 
     private void setupRecyclerView() {
@@ -137,6 +150,12 @@ public class MainActivity extends AppCompatActivity {
         btnEnableAccessibility.setOnClickListener(v -> {
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             startActivity(intent);
+        });
+
+        btnSavePin.setOnClickListener(v -> {
+            String pin = etScreenPin.getText().toString().trim();
+            prefs.edit().putString("screen_pin", pin).apply();
+            Toast.makeText(this, TextUtils.isEmpty(pin) ? "PIN cleared" : "🔒 Screen Lock PIN saved successfully!", Toast.LENGTH_SHORT).show();
         });
 
         btnPickDateTime.setOnClickListener(v -> showDateTimePicker());

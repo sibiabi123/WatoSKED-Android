@@ -60,7 +60,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="To automatically type and send messages via your WhatsApp app, enable WatoSKED in Accessibility Settings."
+                        android:text="To automatically bypass lockscreen and send messages via WhatsApp, enable WatoSKED in Accessibility Settings."
                         android:textColor="@color/text_primary"
                         android:textSize="13sp" />
 
@@ -72,6 +72,73 @@
                         android:backgroundTint="#FF5252"
                         android:text="Enable in Accessibility Settings"
                         android:textColor="#FFFFFF" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Screen Lock Bypass Card (Like SKEDit) -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="14dp"
+                app:strokeColor="#0EA5E9"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔒 Screen Lock Auto-Unlock (Like SKEDit)"
+                        android:textColor="#0EA5E9"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="If your phone is locked with a PIN, enter it here so WatoSKED can unlock your phone and send messages when you are away."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Screen Lock PIN (Optional)"
+                            app:boxStrokeColor="#0EA5E9"
+                            app:hintTextColor="#0EA5E9">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etScreenPin"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberPassword"
+                                android:textColor="@color/text_primary" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSavePin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#0EA5E9"
+                            android:text="Save PIN"
+                            android:textColor="#000000" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
