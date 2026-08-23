@@ -46,36 +46,35 @@ jobs:
       - name: 📦 Copy APK to Output
         run: |
           mkdir -p build_output
-          cp app/build/outputs/apk/release/*.apk build_output/WatoSKED-v1.2.0.apk
+          cp app/build/outputs/apk/release/*.apk build_output/WatoSKED-v1.2.1.apk
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WatoSKED-v1.2.0-APK
-          path: build_output/WatoSKED-v1.2.0.apk
+          name: WatoSKED-v1.2.1-APK
+          path: build_output/WatoSKED-v1.2.1.apk
 
-      - name: 🚀 Publish GitHub Release v1.2.0
+      - name: 🚀 Publish GitHub Release v1.2.1
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/heads/main')
         with:
-          tag_name: v1.2.0
-          name: WatoSKED v1.2.0 — Universal Dual-Signed Android APK
+          tag_name: v1.2.1
+          name: WatoSKED v1.2.1 — Play Protect Clean Android APK
           body: |
-            ## 📱 WatoSKED v1.2.0 (Universal Signed APK)
+            ## 📱 WatoSKED v1.2.1 (Play Protect Clean Signed APK)
 
             SKEDit-style Native Android WhatsApp automation app that works directly on your phone — **no server, no QR code scanning, and no WhatsApp Web required**.
 
-            ### 🔧 What's New in v1.2.0:
-            - 🔑 **Dual-Signed (v1 + v2 Signature Scheme)**: Eliminates "App not installed" / Package Installer verification errors on all Android devices (Samsung, Xiaomi, Oppo, Vivo, OnePlus, Google Pixel).
-            - 🌍 **Universal Compatibility**: `minSdk 21` (supports all Android versions from Android 5.0 to Android 15).
-            - 📦 **MultiDex Enabled**: Resolves 64K method index limit on package installer.
+            ### 🔧 What's Fixed in v1.2.1:
+            - 🛡️ **Removed `SYSTEM_ALERT_WINDOW`**: Eliminates the Google Play Protect "Financial Fraud / Sensitive Data" heuristic overlay warning.
+            - 🔑 **Dual-Signed (v1 + v2 Signature Scheme)**: Verified RSA-2048 release certificate.
+            - 🌍 **Universal Compatibility**: `minSdk 21` (Android 5.0 to Android 15).
             - 🔒 **Lockscreen Auto-Unlock**: Supports PIN auto-entry and swipe-to-unlock dismissal.
 
             ### 📲 How to Install:
-            1. Download `WatoSKED-v1.2.0.apk` below directly to your phone.
+            1. Download `WatoSKED-v1.2.1.apk` below directly to your phone.
             2. Open the file and tap **Install**.
-            3. If Google Play Protect shows a popup, tap **"More details" ➔ "Install anyway"**.
-            4. Open **WatoSKED** and enable Accessibility Service in Settings.
-          files: build_output/WatoSKED-v1.2.0.apk
+            3. Open **WatoSKED** and enable Accessibility Service in Settings.
+          files: build_output/WatoSKED-v1.2.1.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
